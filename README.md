@@ -1,4 +1,4 @@
-Repo Name (encoders-study)
+encoders-study
 ===================
 
 ## 🌿 Repository structure
