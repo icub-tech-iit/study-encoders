@@ -1,5 +1,10 @@
-encoders-study
+study-encoders
 ===================
+## Info
+This repository hosts the study of encoders. The encoders could be already in use on the robot or new ones.
+
+The studies could concern validating a given encoder or of the SW/FW that reads an encoder and its diagnostic.
+
 
 ## 🌿 Repository structure
 This repository is organized based upon the following multiple parallel (i.e. orphan in Git jargon) branches:
