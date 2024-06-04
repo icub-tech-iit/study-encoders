@@ -19,4 +19,51 @@ slprj*
 *.zip
 *_ert_rtw
 cache*
-codegen*
+codegen*`
+
+# A .gitignore for Keil projects.
+# Taken mostly from http://www.keil.com/support/man/docs/uv4/uv4_b_filetypes.htm
+
+# User-specific uVision files
+#*.uvoptx
+*.uvgui
+*.uvgui.*
+*.uvguix.*
+
+# Listing files
+*.htm
+*.i
+*.lst
+*.scr
+*.map
+# define exception below if needed
+
+
+# Object and HEX files
+*.axf
+*.hex
+*.d
+*.crf
+*.o
+
+# Generated output files
+**/RTE/*
+**/obj/*
+
+# Debugger files
+# define exception below if needed
+#*.ini
+*.dbgconf
+JLinkLog.txt
+JLinkSettings.ini
+
+# Other files
+*.scvd
+*.dep
+*.bak
+*.lnp
+
+# Miscellaneous
+*.iex
+.vscode
+
