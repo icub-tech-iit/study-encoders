@@ -1,13 +1,14 @@
 # **HOW TO USE AUX_AMC_TEST_17642 TO SIMULATE DIGITAL SIGNALS FROM AN INCREMENTAL ENCODER.**
 
+
 # 1.	Introduction
-If you are reading this document you are probably trying to simulate a pair of digital signals such as those that an incremental encoder generates. What you need to know now is that this set-up is designed to provide just 2 quadrature square wave signals and their index.
-Through this set-up you will also be able to simulate some error cases to validate the strength of your device's reading. In particular, reference is made to the case of:
+If you are reading this document you are probably trying to simulate a pair of digital signals such as those that an incremental encoder generates. What you need to know now is that this setup is designed to provide just 2 quadrature square wave signals and their index.
+Through this setup you will also be able to simulate some error cases to validate the strength of your device's reading. In particular, reference is made to the case of:
 
 -	**Index error**
 -	**Index missing**
--	**Index loss**
--	**CH loss**
+-	**CH B Missing**
+-	**CPR error**
 
   
 We will see these situations in more detail. Normally, what you try to reproduce then is exactly this behavior:
@@ -17,7 +18,7 @@ We will see these situations in more detail. Normally, what you try to reproduce
 
 
 
-It is possible to generate this behavior, for example, with the AEDR-9830 encoder. In this case the optical disk rotates with respect to a sensor that will provide feedback of the successful transition through two readings offset by 90°, channel A and channel B. In the image below you will find a representation of this. Also observe the presence of the index, here the optical sensor will provide a signal of the correct size to tell you that you have made 1 full turn (360°).
+It is possible to generate this behavior, for example, with the AEDR-9830 encoder. In this case, the optical disk rotates with respect to a sensor that will provide feedback of the successful transition through two readings offset by 90°, channel A and channel B. In the image below you will find a representation of this. Also observe the presence of the index, here the optical sensor will provide a signal of the correct size to tell you that you have made 1 full turn (360°).
 
 >[!WARNING]
 >In the fw exactly this behavior is simulated, so the resolution and index characteristics also depend on this specific case.
@@ -38,7 +39,7 @@ Another important thing is to connect the crocodile as in the picture:
 
 ## 2.2	Firmaware Upload
 
-Now you need the FW, you can find the updated version [here]( https://github.com/icub-tech-iit/study-encoders/tree/code)
+Now you need the FW, you can find the updated version [here](https://github.com/icub-tech-iit/study-encoders/tree/code/emulated_quadrature_encoder/incremental_encoder_AUX-AMC_NUCLEO_V03.2)
 Open the latest version with Keil Uvision5, you should have something like this:
 
 ![Picture5](https://github.com/icub-tech-iit/study-encoders/assets/160229887/4fa9b537-ce6d-4b54-a793-2d2a875a6e5e)
@@ -62,7 +63,7 @@ To turn on, press the BLUE button on your core board as in the picture, a power 
 
 ![Picture9](https://github.com/icub-tech-iit/study-encoders/assets/160229887/f21adedb-928a-4422-8c48-c65f3cbd0a6a)
 
-At this point you have turned on your simulator and are already generating the signal in quadrature with the index in its correct form.
+At this point, you have turned on your simulator and are already generating the signal in quadrature with the index in its correct form.
 
 ## 3.1 Default conditions
 If you turned on the board now by pressing the Blue button or were using it and pressed the Black button and again the Blue button you are in the Default condition. This state corresponds to the following working point:
@@ -82,7 +83,7 @@ You can always return to this defined working point no matter what state you are
 
 ![Picture11](https://github.com/icub-tech-iit/study-encoders/assets/160229887/4b6f7c63-d57c-4628-967c-6e0acd96855b)
 
-The selected work point corresponding to the situation in the table:
+The selected work point corresponds to the situation in the table:
 
 | DATA | Description |
 | --- | --- |
@@ -93,7 +94,7 @@ The selected work point corresponding to the situation in the table:
 
 ## 3.3	Nominal Work Point 2
 
-You can always return to this a priori defined working point no matter what state you are in. To achieve this situation, press the SW2 button as in the picture; the status LED will also follow you.
+You can always return to this a priori-defined working point no matter what state you are in. To achieve this situation, press the SW2 button as in the picture; the status LED will also follow you.
 
 
 ![Picture13](https://github.com/icub-tech-iit/study-encoders/assets/160229887/c86ccb69-b61f-408e-8d44-8b5372278b71)
@@ -120,7 +121,7 @@ To return to a lower speed, press the SW1 or SW2 buttons again to return to a no
 
 ## 3.5	Index Error
 
-This feature allows, by pressing SW3 to reproduce the case where the index signal has a different measurement from the nominal one. From the point of view of the physics of the problem, it is as if the “notch” of index had a smaller area than the predetermined one:
+This feature allows, by pressing SW3 to reproduce the case where the index signal has a different measurement from the nominal one. From the point of view of the physics of the problem, it is as if the “notch” of the index had a smaller area than the predetermined one:
 
 ![Picture17](https://github.com/icub-tech-iit/study-encoders/assets/160229887/d70df6af-978b-49b7-96bd-58f2112d2188)
 
@@ -146,7 +147,7 @@ This feature allows you to see if your system is robust to a CPR error. Normally
 
 By pressing the SW1 and SW2 buttons you can return to one of the two nominal points thus restoring the error condition.
 
-# HARDWARE FAULT
+# 4. HARDWARE FAULT
 
 This part describes how to generate in HW mode the sudden absence of the index signal and the channel B signal.
 
