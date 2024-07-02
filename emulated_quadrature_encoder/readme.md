@@ -143,6 +143,9 @@ To exit this feature you can again press SW1 and SW2 to return to a default oper
 
 This feature allows you to see if your system is robust to a CPR error. Normally, in fact, after a certain number of CPRs (i.e., ticks) the optical disk presents the index to signal that you have just completed a full turn. The CPR value, defined by the technology used, conditions all the readings the system can take. Pressing the SW4 button generates a scenario where the index signal is generated every 45° (in our specific case) and not 360° as it should be. From a graphical point of view it is as if you have something like this:
 
+![image](https://github.com/icub-tech-iit/study-encoders/assets/160229887/7c63450a-958e-4bda-ba4d-401f5fa76fd8)
+
+
 ![Picture21](https://github.com/icub-tech-iit/study-encoders/assets/160229887/a6fd3f29-7bf0-41a3-8abd-712855dfcfd7)
 
 By pressing the SW1 and SW2 buttons you can return to one of the two nominal points thus restoring the error condition.
