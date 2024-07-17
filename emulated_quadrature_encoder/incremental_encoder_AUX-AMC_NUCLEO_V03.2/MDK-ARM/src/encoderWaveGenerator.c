@@ -36,8 +36,8 @@ bool turn_onoff = false;                                                // Flag 
 uint32_t counter = 0;                                                   // Global start value for counter
 uint32_t time = 0;                                                      // Global start value for time
 uint32_t t1 = 0;                                                        // Global start value for t1
-uint16_t cpr = 940*4;                                                  // Correct value for cpr
-
+const uint16_t cpr_default = 940*4;
+uint16_t cpr = cpr_default;                                                  // Correct value for cpr
 
 void init(uint32_t waveLen, uint32_t offsetWave, uint32_t TIndex)     // First value without button press
 {
@@ -121,7 +121,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   if(GPIO_Pin == BUTTON_HALL_Pin) 
   {
       
-    cpr = 940*16;                                              // Set normal cpr
+    cpr = cpr_default;                                              // Set normal cpr
       
     T_wave = 4800/2;              //48/2;
     offset_wave = 4800/2;         //48/2;
@@ -141,7 +141,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
    if(GPIO_Pin == BUTTON_START_Pin) 
   {
       
-    cpr = 940*16;                                              // Set normal cpr
+    cpr = cpr_default;                                              // Set normal cpr
       
     T_wave = 22/2;
     offset_wave = 22/2;
@@ -162,7 +162,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     if(GPIO_Pin == BUTTON_MODE_Pin) 
   {
       
-    cpr = 940*16;                                             // Set normal cpr      
+    cpr = cpr_default;                                             // Set normal cpr      
       
     T_wave = (T_wave/2);
     offset_wave = (offset_wave/2);
@@ -186,7 +186,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 // press button SW4 to configure the "cpr error = tick error" from cpr=940 to cpr=1300
     if(GPIO_Pin == BUTTON_UP_DOWN_Pin) 
   {
-      cpr = 940;                                            // Set e wrong value of CPR (wrong but probable)
+      cpr = cpr_default +50;    //(correct cpr+some more (the threshold in 2foc board is 16))                                        // Set e wrong value of CPR (wrong but probable)
   
     // Update LED USER status
       
@@ -202,7 +202,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 // press button SW3 to create a incremental index fault from previus condition
     if(GPIO_Pin == BUTTON_SPEED_Pin) 
   {
-    cpr = 940*16;                                               // Set normal cpr
+    cpr = cpr_default;                                               // Set normal cpr
     T_index = T_index/2;
       
     // Update LED USER status

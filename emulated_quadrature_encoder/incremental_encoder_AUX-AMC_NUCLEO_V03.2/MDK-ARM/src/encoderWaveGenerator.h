@@ -35,6 +35,8 @@ extern bool turn_onoff;
 extern uint32_t t1;
 extern uint32_t time;
 extern uint16_t cpr;
+extern const uint16_t cpr_default;
+
 
 // this function generate a output signial 
 void Wave_generator(void);
