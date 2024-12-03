@@ -10,7 +10,7 @@ function diagnostic = ProcessAksimDiagnostic(experiment_data)
     DisplayPercentages(diagnostic);
 end
 function [diagnostic, counter] = CheckErrors(diagnostic, counter, idx)
-        diagnostic.value = bitand(diagnostic.data(2, idx), double(0xFFFF));
+        diagnostic.value = bitand(diagnostic.data(1, idx), double(0xFFFF));
         switch diagnostic.value
             case 0x01 % Checks for CRC
                 diagnostic.aksim.diagn_info.crc(idx) = 1;

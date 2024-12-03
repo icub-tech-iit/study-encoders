@@ -1,12 +1,14 @@
 close all; clear; clc; % Reset the environment
 %% Compute data
-dataPath = "Data\m20_ferrite.mat"; % Relative path of the experiment data
+dataPath = "4.3_normal.mat"; % Relative path of the experiment data
 experimentData = loadData(dataPath);
 experiment = fillStruct(experimentData);
 diagnostic = computeDiagnosticError(experiment);
+
 calculatePercentages(diagnostic)
+% plot(experiment.time, errorPlot.invalidData)
 %% Plots
-timeOffset = 11585; % Time before the actual test starts
+timeOffset = 1; % Time before the actual test starts
 plotEnable = true; % Bool flag that enables error plotting
 if plotEnable
     plotSpeedTitle = '10'; % Set speed for plot title
@@ -15,6 +17,7 @@ if plotEnable
     plotJointMotorStates(experiment, plotSpeedTitle)
     plotJointPos_vs_JointPosCalculated(experiment, timeOffset)
 end
+% plot(experiment.time, errorPlot.crc, 'o')
 %% Functions definitions
 function experimentData = loadData(dataPath)
     % Load data from the specified path
@@ -156,7 +159,7 @@ function plotErrors(experiment, errorPlot, diagnostic, plotSpeedTitle)
         plot(diagnostic.time, errorPlot.crc, '*', 'LineWidth', 1, 'Color', 'r');
         plot(diagnostic.time, errorPlot.c2l, '*', 'LineWidth', 1, 'Color', 'g');
         plot(diagnostic.time, errorPlot.invalidData, '*', 'LineWidth', 1, 'Color', '#0578f1');
-    hold off;
+        hold off;
         title('Encoder raw data (Joint position)');
         subtitle(['Joint position, (joint speed: ', plotSpeedTitle, ' $[\frac{deg}{sec}$])'], 'Interpreter', 'latex');
         axis([-inf, inf, -2^15, 2.01^19]);
@@ -171,7 +174,6 @@ function plotJointMotorStates(experiment, plotSpeedTitle)
     subplot(2, 2, 1); plot(experiment.time, experiment.jointPosition, 'LineWidth', 1); subtitle('Joint Position', 'Interpreter', 'latex'); xlabel('Time (s)');
     subplot(2, 2, 2); plot(experiment.time, experiment.motorPosition, 'LineWidth', 1); subtitle('Motor Position', 'Interpreter', 'latex'); xlabel('Time (s)');
     subplot(2, 2, 3); plot(experiment.time, experiment.jointVelocity, 'b--', 'LineWidth', 0.5); subtitle('Joint Velocity', 'Interpreter', 'latex'); xlabel('Time (s)');
-    subplot(2, 2, 4); plot(experiment.time, experiment.motorCurrent, 'b--', 'LineWidth', 0.5); subtitle('Motor Current', 'Interpreter', 'latex'); xlabel('Time (s)');
     sgtitle(['Joint and motor states, ', plotSpeedTitle, ' [$\frac{deg}{sec}$]'], 'Interpreter', 'latex')
 end
 function plotJointPos_vs_JointPosCalculated(experiment, timeOffset)

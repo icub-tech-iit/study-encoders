@@ -25,13 +25,12 @@ function PlotDiagnostic(experiment_data, varargin)
 
     timestamps = GetTimestamps(experiment_data);
     raw_data = GetRawData(experiment_data);
-
     switch encoder_name
         case 'aksim'
             mask = MakeMaskAksim(diagnostic_data);
             masked_data = ApplyMaskAksim(raw_data, mask);
             figure(104)
-            plot(timestamps, raw_data(2, :), 'k', 'LineWidth', 0.5);
+            plot(timestamps, raw_data(1, :), 'k', 'LineWidth', 0.5);
             hold on
             plot(timestamps, masked_data(1, :), 'r*')
             plot(timestamps, masked_data(2, :), 'y*')
@@ -78,10 +77,18 @@ function mask = MakeMaskAksim(diagnostic)
     mask.crc_invalid_data = diagnostic.aksim.diagn_info.crc_invalid_data > 0;
 end
 function masked_data = ApplyMaskAksim(raw_data, mask)
-    crc = raw_data(2, :)'.*mask.crc; %apply the mask
-    c2l = raw_data(2, :)'.*mask.c2l;
-    invalid_data = raw_data(2, :)'.*mask.invalid_data;
-    crc_invalid_data = raw_data(2, :)'.*mask.crc_invalid_data;
+    if all(raw_data(2, :) == 0) % len(encoder_name) == 1
+        crc = raw_data'.*mask.crc; %apply the mask
+        c2l = raw_data'.*mask.c2l;
+        invalid_data = raw_data'.*mask.invalid_data;
+        crc_invalid_data = raw_data'.*mask.crc_invalid_data;
+    else
+        crc = raw_data(2, :)'.*mask.crc; %apply the mask
+        c2l = raw_data(2, :)'.*mask.c2l;
+        invalid_data = raw_data(2, :)'.*mask.invalid_data;
+        crc_invalid_data = raw_data(2, :)'.*mask.crc_invalid_data;
+    end
+
     processed_data = [crc, c2l, invalid_data, crc_invalid_data]';
     processed_data(processed_data == 0) = nan; % Replace zeros with NaN for plotting
     masked_data = processed_data;
