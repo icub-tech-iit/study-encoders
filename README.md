@@ -12,6 +12,7 @@ This repository is organized based upon the following multiple parallel (i.e. or
 - 🔘 [`sim`](../../tree/sim) contains simulations.
 - 🔘 [`code`](../../tree/code) contains code and configuration files.
 - 🔘 [`mech`](../../tree/mech) contains mechanical drawings.
+- 🔘 [`data`](../../tree/data) contains experimental data used by different scripts and apps in `code` branch.
 
 ### 🔽 How to clone specific branches locally
 ```console
