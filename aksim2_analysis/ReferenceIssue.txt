@@ -1,0 +1,2 @@
+These tests are associated with issue: Validate Aksim - STINT 1 #32
+https://github.com/icub-tech-iit/study-encoders/issues/32
