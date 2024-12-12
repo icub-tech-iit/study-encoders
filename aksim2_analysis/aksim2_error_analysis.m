@@ -1,162 +1,205 @@
-%{
-This code should:
- - Find the errors/warnings thrown by the Aksim2 encoder.
- - Analyse the number of errors for each type of error.
- - Plot the raw encoder values
- - Optionally plot the errors over them
-%}
-
-% Reset the environment
-close all; clear; clc; 
-
-% Load data from a folder.
-% % Specify the relative path to the file and load it as 'datastruct':
-datastruct = load("Data\aksim2_testp20_noferrite.mat");
-datastruct_name = fieldnames(datastruct);
-test_name = datastruct_name{1};
-experiment = datastruct.(test_name);
-
-clear datastruct datastruct_name;
-
-% Set speed for plotting purpose
-speed = '10';
-
-%% Functions definition for error computation and plotting
-
-function diagnostic_error = diagn_error(diagnostic_data)
-
-    n = length(diagnostic_data);
-
-    diagnostic_error = struct( ...
-        's', n, ...
-        'rescaler', 100000, ... %for better visualization
-        'counter', 0, ...
-        'crc_count', 0, ...
-        'c2l_count', 0, ...
-        'invalidData_count', 0, ...
-        'val', 0, ...
+close all; clear; clc; % Reset the environment
+%% Compute data
+dataPath = "Data\m20_ferrite.mat"; % Relative path of the experiment data
+experimentData = loadData(dataPath);
+experiment = fillStruct(experimentData);
+diagnostic = computeDiagnosticError(experiment);
+calculatePercentages(diagnostic)
+%% Plots
+timeOffset = 11585; % Time before the actual test starts
+plotEnable = true; % Bool flag that enables error plotting
+if plotEnable
+    plotSpeedTitle = '10'; % Set speed for plot title
+    errorPlot = prepareErrorPlot(experiment.rawData, diagnostic); % Prepare error plot data
+    plotErrors(experiment, errorPlot, diagnostic, plotSpeedTitle)
+    plotJointMotorStates(experiment, plotSpeedTitle)
+    plotJointPos_vs_JointPosCalculated(experiment)
+end
+%% Functions definitions
+function experimentData = loadData(dataPath)
+    % Load data from the specified path
+    loadedData = load(dataPath);
+    fieldName = fieldnames(loadedData);
+    testName = fieldName{1};
+    experimentData = loadedData.(testName);
+end
+function experiment = fillStruct(experimentData)
+%% Fills an "e" struct, retaining useful values
+experiment = struct( ...
+    'rawData', experimentData.raw_data_values.eoprot_tag_mc_joint_status_addinfo_multienc.data(1, :), ...
+    'jointPosition', experimentData.joints_state.positions.data(1, :), ...
+    'jointVelocity', experimentData.joints_state.velocities.data(1, :), ...
+    'motorCurrent', experimentData.motors_state.currents.data(1, :), ...
+    'motorPosition', experimentData.motors_state.positions.data(1, :), ...
+    'diagnosticData', experimentData.raw_data_values.eoprot_tag_mc_joint_status_addinfo_multienc.data(3, :), ...
+    'time', experimentData.raw_data_values.eoprot_tag_mc_joint_status_addinfo_multienc.timestamps ...
+);
+experiment.time = experiment.time - experiment.time(1); % Relative time
+end
+function maskedData = applyMask(rawData, mask)
+    maskedData = double(rawData') .* double(mask); % Apply the mask
+    maskedData(maskedData == 0) = nan; % Replace zeros with NaN for plotting
+end
+function diagnosticStruct = initDiagnosticStruct(experiment)
+    n = length(experiment.diagnosticData);
+    diagnosticStruct = struct( ...
+        'totalSamples', n, ...
+        'rescaler', 1, ...
+        'crcCount', 0, ...
+        'c2lCount', 0, ...
+        'invalidDataCount', 0, ...
+        'C2L_invalidDataCount', 0, ...
+        'CRC_invalidDataCount', 0, ...
+        'CRC_InvData_C2LCount', 0, ...
+        'C2L_CRCCount', 0, ...
         'crc', zeros(n, 1), ...
-        'c2l', zeros(n, 1), ...
-        'invalidData', zeros(n, 1) ...
+        'c2l', zeros(n, 1), ...,
+        'invalidData', zeros(n, 1), ...
+        'C2L_CRC', zeros(n, 1), ...
+        'CRC_invalidData', zeros(n, 1), ...
+        'C2L_invalidData', zeros(n, 1), ...
+        'CRC_InvData_C2L', zeros(n, 1) ...
     );
-
-    for d = 1:n
-        %Select the last part of the message
-        diagnostic_error.val = cast(bitand(diagnostic_data(d), 255), 'double');
-        %Counts the number of error occurence
-        if diagnostic_error.val ~= 0
-            diagnostic_error.counter = diagnostic_error.counter + 1;
-        end
-        %Finds CRC error occurrence
-        if bitget(diagnostic_error.val, 1) == 1
-            diagnostic_error.crc(d) = diagnostic_error.rescaler;
-            %counts the number of CRC errors
-            if bitget(diagnostic_error.val, 2) == 0 && bitget(diagnostic_error.val, 3) == 0
-                diagnostic_error.crc_count = diagnostic_error.crc_count + 1;
-            end
-        end
-        %Finds C2L warning occurrence
-        if bitget(diagnostic_error.val, 2) == 1
-            diagnostic_error.c2l(d) = 2 * diagnostic_error.rescaler;
-            %counts the number of C2L warnings
-            diagnostic_error.c2l_count = diagnostic_error.c2l_count + 1;
-        end
-        %Finds invalid data error occurrence
-        if bitget(diagnostic_error.val, 3) == 1
-            diagnostic_error.invalidData(d) = 4 * diagnostic_error.rescaler;
-            %counts the number of invalid data errors
-            diagnostic_error.invalidData_count = diagnostic_error.invalidData_count + 1;
+diagnosticStruct.time = experiment.time; % Matches time between experiment and diagnostic
+end
+function diagnostic_data = computeDiagnosticError(experiment)
+    %% Struct initialization
+    diagnostic_data = initDiagnosticStruct(experiment);    
+    for d = 1:diagnostic_data.totalSamples
+        diagnostic_data.value = bitand(experiment.diagnosticData(d), double(0xFFFF));
+        switch diagnostic_data.value
+           
+            case 0x01 % Checks for CRC
+                    diagnostic_data.crc(d) = diagnostic_data.rescaler;
+                    diagnostic_data.crcCount = diagnostic_data.crcCount + 1;
+           
+            case 0x02  % Checks C2L
+                    diagnostic_data.c2l(d) = diagnostic_data.rescaler;
+                    diagnostic_data.c2lCount = diagnostic_data.c2lCount + 1; 
+           
+            case 0x03  % Checks for C2L + CRC
+                    diagnostic_data.C2L_CRC(d) = diagnostic_data.rescaler;
+                    diagnostic_data.C2L_CRCCount = diagnostic_data.C2L_CRCCount + 1;
+            
+            case 0x04 % Checks for Invalid Data
+                    diagnostic_data.invalidData(d) = diagnostic_data.rescaler;
+                    diagnostic_data.invalidDataCount = diagnostic_data.invalidDataCount + 1;
+            
+            case 0x05 % Checks for CRC + Invalid Data
+                    diagnostic_data.CRC_invalidData(d) = diagnostic_data.rescaler;
+                    diagnostic_data.CRC_invalidDataCount = diagnostic_data.CRC_invalidDataCount + 1;
+                    diagnostic_data.crcCount = diagnostic_data.crcCount + 1;
+            
+            case 0x06  % Checks for C2L + Invalid Data
+                    diagnostic_data.C2L_invalidData(d) = diagnostic_data.rescaler;
+                    diagnostic_data.C2L_invalidData = diagnostic_data.C2L_invalidData + 1;   
+            
+            case 0x07 % Checks for CRC + C2L + Invalid Data
+                    diagnostic_data.CRC_InvData_C2L(d) = diagnostic_data.rescaler;
+                    diagnostic_data.CRC_InvData_C2LCount = diagnostic_data.CRC_InvData_C2LCount + 1;             
         end
     end
+end
+function calculatePercentages(diagnostic)
+    %% Calculate percentages
+    % Pure errors
+    diagnostic.crcPercentage = (diagnostic.crcCount / diagnostic.totalSamples) * 100;
+    diagnostic.c2lPercentage = (diagnostic.c2lCount / diagnostic.totalSamples) * 100;
+    diagnostic.invalidDataPercentage = (diagnostic.invalidDataCount / diagnostic.totalSamples) * 100;
 
-    % Calculate percentages
-    diagnostic_error.crc_perc = (diagnostic_error.crc_count / diagnostic_error.s) * 100;
-    diagnostic_error.c2l_perc = (diagnostic_error.c2l_count / diagnostic_error.s) * 100;
-    diagnostic_error.invalidData_perc = (diagnostic_error.invalidData_count / diagnostic_error.s) * 100;
-    error_tot_calc = diagnostic_error.crc_perc + diagnostic_error.c2l_perc + diagnostic_error.invalidData_perc;
-    diagnostic_error.total_perc = (diagnostic_error.counter / diagnostic_error.s) * 100;
+    % Mixed errors
+    diagnostic.CRC_invalidDataPercentage =  (diagnostic.CRC_invalidDataCount / diagnostic.totalSamples) * 100;
+    diagnostic.C2L_invalidDataPercentage =  (diagnostic.C2L_invalidDataCount / diagnostic.totalSamples) * 100;
+    diagnostic.CRC_InvData_C2LPercentage =  (diagnostic.CRC_InvData_C2LCount / diagnostic.totalSamples) * 100;
+    
+    % Total error as sum of the single errors
+    diagnostic.totalError = diagnostic.crcPercentage + ...
+                            diagnostic.c2lPercentage + ...
+                            diagnostic.invalidDataPercentage + ...
+                            diagnostic.CRC_invalidDataPercentage + ...
+                            diagnostic.C2L_invalidDataPercentage + ...
+                            diagnostic.CRC_InvData_C2LPercentage;
 
     % Display diagnostic results
-    fprintf('CRC Error: %.2f%%\n', diagnostic_error.crc_perc);
-    fprintf('C2L Error: %.2f%%\n', diagnostic_error.c2l_perc);
-    fprintf('Invalid Data Error: %.2f%%\n', diagnostic_error.invalidData_perc);
-    fprintf('Sum of %% errors: %.2f%%\n', error_tot_calc);
-    fprintf('Total error calculation: %.2f%%\n', diagnostic_error.total_perc);
-    
-    %Ensures that the percentages are computed properly
-    if error_tot_calc - diagnostic_error.total_perc == 0
-        disp('Percentage error calculation is valid');
-    end
+    fprintf('STANDARD ERRORS \n')
+    fprintf('CRC Error: %.4f%%\n', diagnostic.crcPercentage);
+    fprintf('C2L Error: %.4f%%\n', diagnostic.c2lPercentage);
+    fprintf('Invalid Data Error: %.4f%%\n', diagnostic.invalidDataPercentage);
+    fprintf('\n')
+    fprintf('MIXED ERRORS \n')
+    fprintf('CRC + Invalid data Error: %.4f%%\n', diagnostic.CRC_invalidDataPercentage);
+    fprintf('C2L + Invalid data Error: %.4f%%\n', diagnostic.C2L_invalidDataPercentage);
+    fprintf('CRC + InvalidData+ C2L Error: %.4f%%\n', diagnostic.CRC_InvData_C2LPercentage);
+    fprintf('\n')
+    fprintf('Sum of %% errors: %.4f%%\n', diagnostic.totalError);
 end
-
-% Error plotting function
-function plotErr = plot_errors(e, d)
-
-%Select non-zero error values to make a mask over the encoder raw values
+function errorPlotData = prepareErrorPlot(rawData, diagnostic)
+    % Select non-zero error values to make a mask over the encoder raw values
     mask = struct( ...
-        'crc', d.perc_err.crc > 0, ...
-        'c2l', d.perc_err.c2l > 0, ...
-        'invData', d.perc_err.invalidData > 0 ...
+        'crc', diagnostic.crc > 0, ...
+        'c2l', diagnostic.c2l > 0, ...
+        'invalidData', diagnostic.invalidData > 0, ...
+        'CRC_invalidData', diagnostic.CRC_invalidData > 0, ...
+        'C2L_invalidData', diagnostic.C2L_invalidData > 0, ...
+        'CRC_InvData_C2L', diagnostic.CRC_InvData_C2L > 0 ...
     );
-    %Multiply the mask by th encoder values to overlap the plots
-    plotErr = struct( ...
-        'crc', double(e.rawData') .* double(mask.crc), ...
-        'c2l', double(e.rawData') .* double(mask.c2l), ...
-        'invData', double(e.rawData') .* double(mask.invData) ...
-    );
-
-    % Replace zeros with nan for proper plotting
-    plotErr.crc(plotErr.crc == 0) = nan;
-    plotErr.c2l(plotErr.c2l == 0) = nan;
-    plotErr.invData(plotErr.invData == 0) = nan;
+    % Multiply the mask by th encoder values to overlap the plots
+    errorPlotData = struct( ...
+        'crc', applyMask(rawData, mask.crc), ...
+        'c2l', applyMask(rawData, mask.c2l), ...
+        'invalidData', applyMask(rawData, mask.invalidData), ...
+        'CRC_invalidData', applyMask(rawData, mask.CRC_invalidData), ...
+        'C2L_invalidData', applyMask(rawData, mask.C2L_invalidData), ...
+        'CRC_InvData_C2L', applyMask(rawData, mask.CRC_InvData_C2L) ...
+    );   
 end
-
-%% Fills an "e" struct, retaining useful values
-
-e.rawData = experiment.raw_data_values.eoprot_tag_mc_joint_status_addinfo_multienc.data(1, :); %encoder raw values
-e.jointPosition = experiment.joints_state.positions.data(1, :); 
-e.jointVelocity = experiment.joints_state.velocities.data(1, :);
-e.motorCurrent = experiment.motors_state.currents.data(1, :);
-e.motorPos = experiment.motors_state.positions.data(1, :);
-e.diagnostic = experiment.raw_data_values.eoprot_tag_mc_joint_status_addinfo_multienc.data(3, :); %vector of the errors
-e.time = experiment.raw_data_values.eoprot_tag_mc_joint_status_addinfo_multienc.timestamps;
-e.time = e.time - e.time(1);  % Defines a relative time interval
-
-% Compute error percentages and data to be plotted
-d.perc_err = diagn_error(e.diagnostic);
-d.time = e.time;
-
-plotErr = plot_errors(e, d);
-
-%% Plots
-
-%{ 
-- Plot rawData with or without error marks.
-- Set PLOT_ERRORS to one if you want to plot the errors over the encoder values.
-- If the errors are not plotted, matlab will take care of the extra legend entries and ignore them.
-%}
-
-PLOT_ERRORS = 0;
-
-figure(1);
-plot(e.time, e.rawData, 'k', 'LineWidth', 0.5);
-if(PLOT_ERRORS == 1)
+function plotErrors(experiment, errorPlot, diagnostic, plotSpeedTitle)
+    figure(1);
+    plot(experiment.time, experiment.rawData, 'k', 'LineWidth', 0.5);
     hold on;
-    plot(d.time, plotErr.crc, '*', 'LineWidth', 1, 'Color', 'm');
-    plot(d.time, plotErr.c2l, '*', 'LineWidth', 1, 'Color', 'r');
-    plot(d.time, plotErr.invData, '*', 'LineWidth', 1, 'Color', 'b');
+        plot(diagnostic.time, errorPlot.crc, '*', 'LineWidth', 1, 'Color', 'r');
+        plot(diagnostic.time, errorPlot.c2l, '*', 'LineWidth', 1, 'Color', 'g');
+        plot(diagnostic.time, errorPlot.invalidData, '*', 'LineWidth', 1, 'Color', '#0578f1');
     hold off;
+        title('Encoder raw data (Joint position)');
+        subtitle(['Joint position, (joint speed: ', plotSpeedTitle, ' $[\frac{deg}{sec}$])'], 'Interpreter', 'latex');
+        axis([-inf, inf, -2^15, 2.01^19]);
+        xlabel('Time (seconds)');
+        lgd = legend('Joint position', 'CRC error', 'C2L error', 'Invalid Data error');
+        lgd.FontSize = 5; lgd.Location = 'north'; lgd.Orientation = 'horizontal';
+        set(gca,'color', [0.9 0.9 0.9]);
 end
-title('Encoder raw data (Joint position)');
-subtitle(['Joint position, (joint speed: ', speed, ' $[\frac{deg}{sec}$])'], 'Interpreter', 'latex');
-axis([-inf, inf, -2^15, 2.01^19]);
-xlabel('Time (seconds)');
-lgd = legend('Joint position', 'CRC error', 'C2L error', 'Invalid Data error');
-lgd.FontSize = 5; lgd.Location = 'north'; lgd.Orientation = 'horizontal';
+function plotJointMotorStates(experiment, plotSpeedTitle) 
+    %% Plots the joints and the motors states
+    figure(2);
+    subplot(2, 2, 1); plot(experiment.time, experiment.jointPosition, 'LineWidth', 1); subtitle('Joint Position', 'Interpreter', 'latex'); xlabel('Time (s)');
+    subplot(2, 2, 2); plot(experiment.time, experiment.motorPosition, 'LineWidth', 1); subtitle('Motor Position', 'Interpreter', 'latex'); xlabel('Time (s)');
+    subplot(2, 2, 3); plot(experiment.time, experiment.jointVelocity, 'b--', 'LineWidth', 0.5); subtitle('Joint Velocity', 'Interpreter', 'latex'); xlabel('Time (s)');
+    subplot(2, 2, 4); plot(experiment.time, experiment.motorCurrent, 'b--', 'LineWidth', 0.5); subtitle('Motor Current', 'Interpreter', 'latex'); xlabel('Time (s)');
+    sgtitle(['Joint and motor states, ', plotSpeedTitle, ' [$\frac{deg}{sec}$]'], 'Interpreter', 'latex')
+end
+function plotJointPos_vs_JointPosCalculated(experiment, timeOffset)
 
-% Joint and motor states plots
-figure(2);
-subplot(2, 2, 1); plot(e.time, e.jointPosition, 'LineWidth', 1); title('Joint position', 'Interpreter', 'latex'); xlabel('Time (seconds)');
-subplot(2, 2, 2); plot(e.time, e.motorPos, 'LineWidth', 1); title('Motor position', 'Interpreter', 'latex'); xlabel('Time (seconds)');
-subplot(2, 2, 3); plot(e.time, e.jointVelocity, 'b--', 'LineWidth', 0.5); title('Joint velocity', 'Interpreter', 'latex'); xlabel('Time (seconds)');
-subplot(2, 2, 4); plot(e.time, e.motorCurrent, 'b--', 'LineWidth', 0.5); title('Motor current', 'Interpreter', 'latex'); xlabel('Time (seconds)');
+    meanSamplingTime = mean(diff(experiment.time)); % Mean sampling time
+    jPos = experiment.jointPosition(timeOffset:end) - experiment.jointPosition(timeOffset); %remove the data offset
+    mPos = experiment.motorPosition(timeOffset:end) - experiment.motorPosition(timeOffset); %remove the data offset
+    gearRatio = 100;
+    jPosCalculated = mPos/gearRatio;
+    
+    err= jPosCalculated-jPos;
+    maxErr = max(err); minErr = min(err);
+    maxIndex = find(err == maxErr); minIndex = find(err == minErr);
+
+    figure(3)
+    plot(experiment.time(timeOffset:end), err)
+    hold on
+        plot([experiment.time(1) experiment.time(end)], [maxErr maxErr], 'r--')
+        plot([experiment.time(1) experiment.time(end)], [minErr minErr], 'b--')
+        plot(experiment.time(maxIndex) + timeOffset*meanSamplingTime, maxErr, 'rx', 'LineWidth',2)
+        plot(experiment.time(minIndex) + timeOffset*meanSamplingTime, minErr, 'bx', 'LineWidth',2)
+    hold off
+    title('Joint position error')
+    subtitle('Aksim2 data vs Computed joint position')
+end
+%% Clear some data to organize the workspace
+clear dataPath loadedData fieldName testName lgd plotEnable
