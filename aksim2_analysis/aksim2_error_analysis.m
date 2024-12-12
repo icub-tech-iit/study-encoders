@@ -80,6 +80,7 @@ function diagnostic_data = computeDiagnosticError(experiment)
             case 0x03  % Checks for C2L + CRC
                     diagnostic_data.C2L_CRC(d) = diagnostic_data.rescaler;
                     diagnostic_data.C2L_CRCCount = diagnostic_data.C2L_CRCCount + 1;
+                    diagnostic_data.crcCount = diagnostic_data.crcCount + 1;
             
             case 0x04 % Checks for Invalid Data
                     diagnostic_data.invalidData(d) = diagnostic_data.rescaler;
@@ -96,7 +97,8 @@ function diagnostic_data = computeDiagnosticError(experiment)
             
             case 0x07 % Checks for CRC + C2L + Invalid Data
                     diagnostic_data.CRC_InvData_C2L(d) = diagnostic_data.rescaler;
-                    diagnostic_data.CRC_InvData_C2LCount = diagnostic_data.CRC_InvData_C2LCount + 1;             
+                    diagnostic_data.CRC_InvData_C2LCount = diagnostic_data.CRC_InvData_C2LCount + 1;
+                    diagnostic_data.crcCount = diagnostic_data.crcCount + 1;
         end
     end
 end
