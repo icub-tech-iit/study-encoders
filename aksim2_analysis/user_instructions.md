@@ -1,5 +1,5 @@
 
-### User Instructions for Running the Code
+### User instructions for running the code
 
 This document explains how to use the provided MATLAB code to process experimental data provided by the Aksim2 encoder, compute diagnostics, and visualize the results.
 
