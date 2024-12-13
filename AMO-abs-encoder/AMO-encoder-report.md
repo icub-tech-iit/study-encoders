@@ -1,0 +1,53 @@
+# Report AMO encoder related problems
+
+During the last couple of weeks (December 2024) we concentrate in analysing errors related to the AMO encoder. Some of the issues have been currently solved, in particular for what concerns the calibration procedure. However, during the studies done, some has appeared to be more cumbersome than expected and took much more time to be well studied and understood.
+Therefore, in this report, we are gonna summarize what are all the main problems we currently have with the robot joints that mount an AMO encoder. 
+As already said, some of this problems have been already solved and tested but the solution is not yet on the robot. Thus, we are gonna mention also those and add a note to underline that they do not need to be investigated anymore. Moreover, since this reports wants to have the aim of collecting all the issue we have faced with this type of encoder in the latest weeks, it is a good practice to add everything, considering also the fact that those issues are related among each others.
+
+## AMO calibrates without reaching the hard-stop position
+
+Analysis done and problem explained in here: https://github.com/robotology/icub-firmware/issues/529#issuecomment-2479195950 and here: https://github.com/robotology/icub-firmware/issues/529#issuecomment-2486283511
+
+Solution to the problem included in this PR: https://github.com/robotology/icub-firmware-build/pull/174 and related ones. 
+
+This problem was mainly due to the fact that sometimes the class instances responsible for keeping methods and data related to the AMO encoders used to initialize after the calibration command sent by the high level was received from the board.
+
+
+## AMO joint calibrates but does not reach the startup position
+
+Issues linked: https://github.com/robotology/icub-firmware/issues/536
+
+We have seen that sometimes a joint mounting an AMO encoder calibrates to the hard stop but then it fails to reach the startup position. From the analysis done up to now it seems that this is due to the fact that when that happen the joint is in the situation where the calibration timeout set by `icub-main` (sw) expires while the joint is still moving for reaching the hard-stop position. In this case it might happens that another calibration timeout (the one set by the fw on `icub-firmware` side) is still running and for this reason the joint is continued to be seen by the controller in calibration and thus it continues to move towards the hard stop. 
+From here we can have 2 possible outcomes:
+- this low level timeout expires before reaching the hard stop and thus the joint will stop and won't move towards the hard stop position too. Moreover, at the shut down, the joint does not go in parking mode and remains where it is.
+- the low level timeout does not expires before the joint reaches the hard stop position. In this case, the joint remains where it is without going to the startup position. However, at the shut down it will perform parking operations.
+
+The problems we have identified with these situations are the following:
+- for the first case where both timeouts expires before the joint reaches the hard stop position, there's no particular problems since the joint will appear as `NOT CONFIGURED` and will skip parking at shut down
+- in the second case the issue is quite different. First of all, the joint will be moved to the `RUN` control mode but it will use the so called `safe pids` (not totally sure about this). Secondly, because at the expiring of the `high level` timeout, the high level controller makes the request of putting the joint in `IDLE` to the low level controller, but this request always fails to be accepted since the joint is still in calibration. Furthermore, in that moment the `safe pids` should be requested but for what just said we are not sure they are actually set. In any case, the joint is probably not correctly configured in this condition. Moreover, we are leaving the joint in a state where it can be operated by the user (it can be set in `RUN` mode), after having failed a request to be set in `IDLE`. 
+
+In relation to all of this we are investigating the whole pipeline of the calibration state machine in this issue: https://github.com/icub-tech-iit/five/issues/277
+
+## AMO joint reading random values 
+
+Issues linked: https://github.com/robotology/icub-firmware/issues/535 and https://github.com/robotology/icub-firmware/issues/428
+
+As detailed in here: https://github.com/robotology/icub-firmware/issues/428 we have seen that sometimes it happened that a joint with an AMO encoder mounted and calibrated using the calibration type 10, i.e. using the AMO as an incremental encoder, starts to read random values.
+In https://github.com/robotology/icub-firmware/issues/535, we tried to reproduce that behavior on our setup.
+After some tests we have outlined the following situations, one of which seems to apparently be the one that generates the problem of reading random values:
+- if we cut one of the cables of the SPI connector of the AMO encoder, the joint always goes in `FAULT` condition and stops
+- if we remove the cable from the connector the outcome is the same: `FAULT` and the joint stops
+- if we just move the encoder receiver away from the magnetic disk we have seen that the joints starts to read "random" values. We are calling them in this way since we are not exploiting fully the low level diagnostic of the AMO and we are just considering to get spikes. Instead the AMO diagnostic tells us much more and we should exploit that info.
+
+Thus, from our analysis done on the bench setup, the only way for having the AMO encoder reading random values is to have the receiver located in the wrong position with respect to the magnetic disk.
+It should be noted that the "correct" position is really restrictive and a movement of 0.25mm can create lots of disturbances, therefore it is really important to pay attention to this and be sure that the encoder is not moving.
+
+
+## All errors discussed can be summarized in the following table
+
+| error observed | visible issue identified | current behavior | action point to solve | other notes |
+|:--------------:|:--------------:|:----------------:|:---------------------:|:-----------:|
+| AMO joint calibrates in calibration type 10 without reaching hard-stop position | Joint during the calibration stops before reaching the hard stop and then either goes to a wrong startup position or remains where it is. To check you are not in a desired condition you can see that: first of all you got `calibration timeout` error in the logs, then the robot can be either at a startup position different from the desired one with control mode `RUN` or steady where it stopped and from the motorgui you will see it as `NOT_CONFIGURED`. **This should not happen anymore after the merging of the `PR` and after the installation of the PR changes on the robot** | if joint fails to instantiate the `AbsEncoder` object when the `calibrate` callback arrives from high-level to the boards the joint starts to calibrate without all data initialized. The joint stop to calibrate when the initialization ends returning `true`. If this happens before reaching the hard-stop position the joint goes back to a wrong startup position than the one previously defined | Solved in the [PR](https://github.com/robotology/icub-firmware-build/pull/174) and related | On the firmware side we should keep investigating on it to check how the changes we have done in the PR are working |
+| AMO joint appears calibrated with calibration type 10 but does not reach startup position | when a joint is calibrated with calibration type 10 you can see it reaching the `hard-stop` position position but then not going the `startup` position. To be sure you are not in a `desired` condition you can see that in the `motorgui` the joint is set in `RUN` control mode instead of in `NOT_CONFIGURED` or at least `IDLE`. Problem here is that you are going to use it with the so called `safe PIDs`. **Check motorgui and logs and report the issue with data if possible. Re-calibrate since you are not using the joint with the desired PIDs** |Sometimes the joints that mount AMO encoder if calibrated with calib type 10 fail to reach the startup position after calibration. In this case the joint might appear on the `motorgui` as `NOT_CONFIGURED` or `IDLE` depending on where it stopped and when the calibration timeouts expired | Investigate how the calibration timeouts works and how the control mode are set if any error happens. Follows the state machine defined [here](https://github.com/icub-tech-iit/five/issues/277) | Check analysis done in related PRs |
+| AMO joints sometimes seem to move weirdly and on the `motorgui` we see random position values | The only outcome we were able to correlate to this issue is that the AMO board moved away from the the magnetic disk in a position that is not the desired one but the are no broken cables nor connector disconnected. When this happens you should see in the logs of the `yarprobotinterface` lots of `warnings` of the type: `AMO encoder has spikes`. **Check the position of the AMO board/receiver with respect to the magnetic disk** | If the AMO receiver is moved away from the magnetic disk the joint starts to read values wrongly and the joint seems to move randomly | Improve the actions done by the motion controller based on all the data we got from the HAL diagnostic. Verify if it is possible that the **AMO** board moves away from its site in the joints where this issue has been noticed. | we are not currently exploiting all the data/info coming from the low level diagnostic of the AMO encoder |
+| AMO joint in HW fault | in this case the joint is in error. You should see the `error` message in the logs of the `yarprobointerface`. The reasons we identified that can explain the problem are the following: one of the AMO cable broken or the connector is not attached to either the joint or the boards anymore or it is making false contacts. **Investigate the cables** | a joint that mounts an AMO encoder goes in hw fault when the encoder stops to stream valid values, i.e. if we remove the cable from either the 2foc connector or the AMO receiver one. Same output occurs when one of the connector's cable breaks | Check if we need to improve the diagnostic to give more specific errors messages to the user and/or improve the mechanics as well | In this case the log of the yri will show invalid data error and the joint is moved in hw fault |
