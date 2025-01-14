@@ -8,6 +8,6 @@ function diagnostic = SetEncoderTypeDiagnostic(experiment_data, encoder_type)
         case 'mrie'
             %todo
         case 'amo'
-            %todo
+            diagnostic = ProcessAmoDiagnostic(experiment_data);
     end
 end

@@ -17,6 +17,7 @@ CMakeSettings.json
 *.mexa64
 slprj*
 *.zip
+*.mat
 *_ert_rtw
 cache*
 codegen*`
