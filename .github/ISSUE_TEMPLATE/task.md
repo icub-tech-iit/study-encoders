@@ -1,7 +1,7 @@
 ---
 name: Task
 about: Create a new task
-title: ''
+title: 'Verb-imperative-form object-of-action rest-of-phrase'
 labels: ''
 assignees: ''
 
