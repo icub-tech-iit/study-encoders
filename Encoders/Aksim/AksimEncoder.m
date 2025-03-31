@@ -1,106 +1,114 @@
 classdef AksimEncoder < Encoder
-    properties
-        DiagnosticData
-        Percentages
-        Rescaler = 1;  % Adjust as needed
-    end
+    %   This class provides methods for computing and displaying aksim diagnostic errors.
     
+    properties (Access = public)
+        Diagnostic
+        JointNumber
+    end %end of properties
+
     methods
         function obj = AksimEncoder()
-            obj@Encoder(); % Call parent class constructor
-        end
-        
-        function obj = ProcessAksimDiagnostic(obj, diagnostic_data, number_of_samples)
-            % Processes the Aksim diagnostic data
-            diagnostic_results = obj.computeDiagnosticError(diagnostic_data, number_of_samples);
-            obj.DiagnosticData = diagnostic_results;
-            
-            % Compute error percentages
-            obj.Percentages = obj.ComputePercentages(number_of_samples);
-            
-            % Display the results
-            obj.DisplayPercentages();
-        end
-        
-function diagnostic_results = computeDiagnosticError(obj, diagnostic_data, number_of_samples)
-    % Initialize diagnostic results struct
-    diagnostic_results = obj.initDiagnosticStruct(number_of_samples);
+            % Initializes an "aksim" encoder starting from encoder base class.
+            obj@Encoder();
+            obj.Diagnostic = struct();
+        end 
 
-    % Process diagnostic data
-    for d = 1:number_of_samples
-        error_code = bitand(diagnostic_data, double(0xFFFF));
+        function set.JointNumber(obj, joint_number)
+            % Specify the order of the encoders
+            obj.JointNumber = joint_number;
+        end
 
-        switch error_code
-            case 0x01
-                diagnostic_results.crc(d) = obj.Rescaler;
-                diagnostic_results.crcCount = diagnostic_results.crcCount + 1;
-            case 0x02
-                diagnostic_results.c2l(d) = obj.Rescaler;
-                diagnostic_results.c2lCount = diagnostic_results.c2lCount + 1;
-            case 0x03
-                diagnostic_results.C2L_CRC(d) = obj.Rescaler;
-                diagnostic_results.C2L_CRCCount = diagnostic_results.C2L_CRCCount + 1;
-                diagnostic_results.crcCount = diagnostic_results.crcCount + 1;
-            case 0x04
-                diagnostic_results.invalidData(d) = obj.Rescaler;
-                diagnostic_results.invalidDataCount = diagnostic_results.invalidDataCount + 1;
-            case 0x05
-                diagnostic_results.CRC_invalidData(d) = obj.Rescaler;
-                diagnostic_results.CRC_invalidDataCount = diagnostic_results.CRC_invalidDataCount + 1;
-                diagnostic_results.crcCount = diagnostic_results.crcCount + 1;
-            case 0x06
-                diagnostic_results.C2L_invalidData(d) = obj.Rescaler;
-                diagnostic_results.C2L_invalidDataCount = diagnostic_results.C2L_invalidDataCount + 1;
-            case 0x07
-                diagnostic_results.CRC_InvData_C2L(d) = obj.Rescaler;
-                diagnostic_results.CRC_InvData_C2LCount = diagnostic_results.CRC_InvData_C2LCount + 1;
-                diagnostic_results.crcCount = diagnostic_results.crcCount + 1;
+        function joint_number = get.JointNumber(obj)
+            % Retrieves the encoder resolution.
+            if isempty(obj.JointNumber)
+                disp('--------------------------------------------------------------------')
+                error('Encoder: Aksim. Unspecified Joint Number. Please assign one.');
+            else
+                joint_number = obj.JointNumber;
+            end
         end
-    end
-end
+        
+        function computeDiagnosticError(obj, experiment)
+            % Extracts diagnostic information from the experiment and classifies errors.
 
-        
-        function diagnostic_results = initDiagnosticStruct(obj, number_of_samples)
-            % Initialize diagnostic results struct
-            diagnostic_results.crc = zeros(1, number_of_samples);
-            diagnostic_results.c2l = zeros(1, number_of_samples);
-            diagnostic_results.C2L_CRC = zeros(1, number_of_samples);
-            diagnostic_results.invalidData = zeros(1, number_of_samples);
-            diagnostic_results.CRC_invalidData = zeros(1, number_of_samples);
-            diagnostic_results.C2L_invalidData = zeros(1, number_of_samples);
-            diagnostic_results.CRC_InvData_C2L = zeros(1, number_of_samples);
-            
-            diagnostic_results.crcCount = 0;
-            diagnostic_results.c2lCount = 0;
-            diagnostic_results.C2L_CRCCount = 0;
-            diagnostic_results.invalidDataCount = 0;
-            diagnostic_results.CRC_invalidDataCount = 0;
-            diagnostic_results.C2L_invalidDataCount = 0;
-            diagnostic_results.CRC_InvData_C2LCount = 0;
+            % Retrieve diagnostic data
+            [rawDiagnosticData, numberOfSamples] = experiment.GetDiagnosticData();
+
+            % Initialize struct to count errors
+            counts = struct( ...
+                'total_samples', numberOfSamples, ...
+                'crc', 0, ...
+                'c2l', 0, ...
+                'invalid_data', 0 ...
+            );
+
+            % Iterate over diagnostic samples
+            for d = 1:numberOfSamples
+                errorCode = bitand(rawDiagnosticData(obj.JointNumber, d), double(0xFFFF));
+
+                switch errorCode
+                    case 0x01 % CRC Error
+                        counts.crc = counts.crc + 1;
+
+                    case 0x02 % C2L Error
+                        counts.c2l = counts.c2l + 1;
+
+                    case 0x03 % C2L + CRC Error
+                        counts.crc = counts.crc + 1;
+
+                    case 0x04 % Invalid Data Error
+                        counts.invalid_data = counts.invalid_data + 1;
+
+                    case 0x05 % CRC + Invalid Data
+                        counts.crc = counts.crc + 1;
+
+                    case 0x06 % C2L + Invalid Data
+                        counts.c2l_invalid_data = counts.c2l_invalid_data + 1;
+
+                    case 0x07 % CRC + C2L + Invalid Data
+                        counts.crc = counts.crc + 1;
+                end
+            end
+
+            % Compute percentages
+            obj.Diagnostic.counts.crc = counts.crc;
+            obj.Diagnostic.counts.c2l = counts.c2l;
+            obj.Diagnostic.counts.invalid_data = counts.invalid_data;
+            obj.Diagnostic.percentages = obj.computePercentages(counts);
+
         end
-        
-        function percentages = ComputePercentages(obj, number_of_samples)
-            % Compute error percentages
-            percentages.crc = (obj.DiagnosticData.crcCount / number_of_samples) * 100;
-            percentages.c2l = (obj.DiagnosticData.c2lCount / number_of_samples) * 100;
-            percentages.C2L_CRC = (obj.DiagnosticData.C2L_CRCCount / number_of_samples) * 100;
-            percentages.invalidData = (obj.DiagnosticData.invalidDataCount / number_of_samples) * 100;
-            percentages.CRC_invalidData = (obj.DiagnosticData.CRC_invalidDataCount / number_of_samples) * 100;
-            percentages.C2L_invalidData = (obj.DiagnosticData.C2L_invalidDataCount / number_of_samples) * 100;
-            percentages.CRC_InvData_C2L = (obj.DiagnosticData.CRC_InvData_C2LCount / number_of_samples) * 100;
+
+        function diagnostic = getDiagnostic(obj)
+            % Returns diagnostic data
+            diagnostic = obj.Diagnostic;
         end
-        
-        function DisplayPercentages(obj)
-            % Displays error percentages in a Markdown-style table
-            fprintf('| Error Type               | Percentage |\n');
-            fprintf('|--------------------------|------------|\n');
-            fprintf('| Failed CRC               | %.4f%%     |\n', obj.Percentages.crc);
-            fprintf('| C2L warning              | %.4f%%     |\n', obj.Percentages.c2l);
-            fprintf('| CRC + C2L                | %.4f%%     |\n', obj.Percentages.C2L_CRC);
-            fprintf('| Invalid data error       | %.4f%%     |\n', obj.Percentages.invalidData);
-            fprintf('| CRC + Invalid Data       | %.4f%%     |\n', obj.Percentages.CRC_invalidData);
-            fprintf('| C2L + Invalid Data       | %.4f%%     |\n', obj.Percentages.C2L_invalidData);
-            fprintf('| CRC + C2L + Invalid Data | %.4f%%     |\n', obj.Percentages.CRC_InvData_C2L);
+
+        function percentages = computePercentages(~, counts)
+            % Computes error percentages
+            percentages.crc = (counts.crc / counts.total_samples) * 100;
+            percentages.c2l = (counts.c2l / counts.total_samples) * 100;
+            percentages.invalid_data = (counts.invalid_data / counts.total_samples) * 100;
         end
-    end
-end
+
+        function displayReport(obj)
+            % Displays computed percentages in markdown table format
+
+            crc = obj.Diagnostic.percentages.crc;
+            c2l = obj.Diagnostic.percentages.c2l;
+            invalid_data = obj.Diagnostic.percentages.invalid_data;
+
+            total_error = crc + c2l + invalid_data;
+
+            fprintf("\n### Aksim Encoder Diagnostic Report\n");
+            fprintf("| Error Type (AKSIM)     | Percentage |\n");
+            fprintf("|------------------------|------------|\n");
+            fprintf("| Failed CRC             | %.4f%%     |\n", crc);
+            fprintf("| C2L warning            | %.4f%%     |\n", c2l);
+            fprintf("| Invalid data error     | %.4f%%     |\n", invalid_data);
+            fprintf("| Sum of the errors      | %.4f%%     |\n", total_error);
+
+        end
+
+    end % end of public methods
+
+end %end of class

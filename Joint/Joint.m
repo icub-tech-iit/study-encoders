@@ -1,5 +1,8 @@
-classdef Joint
-    properties
+classdef Joint < handle
+    %   Represents joint-specific data extracted from an Experiment object,
+    %   including kinematic data and gearbox reduction ratios.
+    
+    properties (Access = public)
         DescriptionList
         Accelerations
         Velocities
@@ -8,31 +11,29 @@ classdef Joint
     end
     
     methods
-        function obj = Joint(experiment)
-            % Constructor that initializes the joint properties using experiment data
-            obj = obj.DefineJointStruct(experiment);
-            % Assign the reduction ratios from the Experiment object
-            obj.ReductionRatios = experiment.Data.reduction_ratios;
+        function obj = Joint(exp)
+            % Joint constructor extracts joint data from an Experiment instance.            
+            obj.DescriptionList = exp.GetDescriptionList();
+            obj.Accelerations = obj.GetJointAccelerations(exp.Data);
+            obj.Velocities = obj.GetJointVelocities(exp.Data);
+            obj.Positions = obj.GetJointPositions(exp.Data);
+            if isfield(exp.Data, 'reduction_ratios')
+                obj.ReductionRatios = exp.Data.reduction_ratios;
+            else
+                obj.ReductionRatios = ones(1, numel(obj.DescriptionList));
+            end
         end
         
-        function obj = DefineJointStruct(obj, experiment)
-            % Takes the data and assigns joint properties
-            obj.DescriptionList = experiment.GetDescriptionList();
-            obj.Accelerations = obj.GetJointAccelerations(experiment.Data);
-            obj.Velocities = obj.GetJointVelocities(experiment.Data);
-            obj.Positions = obj.GetJointPositions(experiment.Data);
+        function acc = GetJointAccelerations(~, data)
+            acc = squeeze(data.joints_state.accelerations.data)';
         end
         
-        function accelerations = GetJointAccelerations(~, experiment_data)
-            accelerations = squeeze(experiment_data.joints_state.accelerations.data)';
+        function vel = GetJointVelocities(~, data)
+            vel = squeeze(data.joints_state.velocities.data)';
         end
         
-        function velocities = GetJointVelocities(~, experiment_data)
-            velocities = squeeze(experiment_data.joints_state.velocities.data)';
-        end
-        
-        function positions = GetJointPositions(~, experiment_data)
-            positions = squeeze(experiment_data.joints_state.positions.data)';
+        function pos = GetJointPositions(~, data)            
+            pos = squeeze(data.joints_state.positions.data)';
         end
     end
 end

@@ -1,17 +1,25 @@
-classdef Encoder
-    properties
-        Resolution % Encoder resolution (counts per revolution or equivalent unit)
+classdef Encoder < handle
+    
+    properties (Access = public)
+        Resolution % Encoder resolution (counts per revolution)
     end
     
     methods
-        function obj = setEncoderResolution(obj, resolution)
-            % Set the resolution of the encoder
+        function set.Resolution(obj, resolution)
+            % Sets the encoder resolution.
             obj.Resolution = resolution;
         end
         
-        function resolution = getEncoderResolution(obj)
-            % Get the resolution of the encoder
-            resolution = obj.Resolution;
+        function resolution = get.Resolution(obj)
+            % Retrieves the encoder resolution.
+            if isempty(obj.Resolution)
+                disp('--------------------------------------------------------------------')
+                warning('Encoder: no resolution set. This will output "empty" value.');
+                disp('--------------------------------------------------------------------')
+                resolution = []; % Return empty if no resolution is set
+            else
+                resolution = obj.Resolution;
+            end
         end
     end
 end

@@ -1,5 +1,8 @@
-classdef Motor
-    properties
+classdef Motor < handle
+    %   Represents motor-specific data extracted from an Experiment object,
+    %   including kinematic and electrical measurements.
+    
+    properties (Access = public)
         DescriptionList
         Accelerations
         Velocities
@@ -9,39 +12,35 @@ classdef Motor
     end
     
     methods
-        function obj = Motor(experiment)
-            % Constructor that initializes the motor properties using experiment data
-            obj = obj.DefineMotorStruct(experiment);
+        function obj = Motor(exp)
+            % Motor Constructor extracts motor data from an Experiment instance.
+            
+            obj.DescriptionList = exp.GetDescriptionList();
+            obj.Accelerations = obj.GetMotorAccelerations(exp.Data);
+            obj.Velocities = obj.GetMotorVelocities(exp.Data);
+            obj.Positions = obj.GetMotorPositions(exp.Data);
+            obj.Currents = obj.GetMotorCurrents(exp.Data);
+            obj.PWM = obj.GetMotorPWM(exp.Data);
         end
         
-        function obj = DefineMotorStruct(obj, experiment)
-            % Takes the data and assigns motor properties
-            obj.DescriptionList = experiment.GetDescriptionList();
-            obj.Accelerations = obj.GetMotorAccelerations(experiment.Data);
-            obj.Velocities = obj.GetMotorVelocities(experiment.Data);
-            obj.Positions = obj.GetMotorPositions(experiment.Data);
-            obj.Currents = obj.GetMotorCurrents(experiment.Data);
-            obj.PWM = obj.GetMotorPWM(experiment.Data);
+        function acc = GetMotorAccelerations(~, data)
+            acc = squeeze(data.motors_state.accelerations.data)';
         end
         
-        function accelerations = GetMotorAccelerations(~, experiment_data)
-            accelerations = squeeze(experiment_data.motors_state.accelerations.data)';
+        function vel = GetMotorVelocities(~, data)
+            vel = squeeze(data.motors_state.velocities.data)';
         end
         
-        function velocities = GetMotorVelocities(~, experiment_data)
-            velocities = squeeze(experiment_data.motors_state.velocities.data)';
+        function pos = GetMotorPositions(~, data)
+            pos = squeeze(data.motors_state.positions.data)';
         end
         
-        function positions = GetMotorPositions(~, experiment_data)
-            positions = squeeze(experiment_data.motors_state.positions.data)';
+        function curr = GetMotorCurrents(~, data)
+            curr = squeeze(data.motors_state.currents.data)';
         end
         
-        function currents = GetMotorCurrents(~, experiment_data)
-            currents = squeeze(experiment_data.motors_state.currents.data)';
-        end
-        
-        function pulse_width_modulation = GetMotorPWM(~, experiment_data)
-            pulse_width_modulation = squeeze(experiment_data.motors_state.PWM.data)';
+        function pwmVal = GetMotorPWM(~, data)
+            pwmVal = squeeze(data.motors_state.PWM.data)';
         end
     end
 end
