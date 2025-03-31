@@ -1,0 +1,19 @@
+classdef Experiment
+    properties
+        test_data % Store the loaded experiment data
+    end
+    
+    methods
+        function obj = LoadData(obj, data_path)
+            % Load data from the specified path
+            loaded_data = load(data_path);
+            field_name = fieldnames(loaded_data);
+            test_name = field_name{1};
+            obj.test_data = loaded_data.(test_name);
+        end
+        function joint_number = GetNumberOfJoints(experiment_data)
+    % Retrieve the number of joints of the setup
+    joint_number = length(experiment_data.description_list);
+end
+    end
+end
