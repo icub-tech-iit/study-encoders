@@ -1,4 +1,4 @@
-function motors = DefineMotorStruct(experiment_data)
+function motors = GetMotorData(experiment_data)
     % Takes the data and puts them in a "motor" struct.
     % The struct contains the data for each motor.
     motors.description_list = GetDescriptionList(experiment_data);
