@@ -3,7 +3,7 @@ classdef AmoEncoder < Encoder
 
     properties (Access = public)
         Diagnostic
-        JointNumber
+        
     end %end of properties
 
     methods
@@ -12,37 +12,23 @@ classdef AmoEncoder < Encoder
             obj.Diagnostic = struct();
             % no need to initialize JointNumber
         end
-        function set.JointNumber(obj, joint_number)
-            % Specify the order of the encoders
-            obj.JointNumber = joint_number;
-        end
-
-        function joint_number = get.JointNumber(obj)
-            % Retrieves the encoder resolution.
-            if isempty(obj.JointNumber)
-                disp('--------------------------------------------------------------------')
-                error('Encoder: AMO. Unspecified Joint Number. Please assign one.');
-            else
-                joint_number = obj.JointNumber;
-            end
-        end
 
         function computeDiagnosticError(obj, experiment)
             % Retrieve AMO diagnostic data
-            diagnostic_data = experiment.GetDiagnosticData();
-            num_samples = length(diagnostic_data(obj.JointNumber, :));
+            [rawDiagnosticData, numberOfSamples] = experiment.GetDiagnosticData();
+            EncoderNumberInJoint = 2; % AMO is always the secondary encoder            
             
             % Initialize struct to count errors
             counts = struct( ...
-                'total_samples', num_samples, ...
+                'total_samples', numberOfSamples, ...
                 'status0', 0, ...
                 'status1', 0, ...
                 'not_connected', 0, ...
                 'total_errors', 0 ...
             );
             % Iterate over diagnostic samples
-            for d = 1:num_samples
-                diagn_type = bitshift(diagnostic_data(obj.JointNumber, d), -16); % Right shift by 16 bits
+            for d = 1:numberOfSamples
+                diagn_type = bitshift(rawDiagnosticData(EncoderNumberInJoint, d), -16); % Right shift by 16 bits
 
                 switch diagn_type
                     case 0x02 % Status 0 error

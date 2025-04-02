@@ -54,6 +54,7 @@ classdef Experiment < handle
 
             rawArray = obj.Data.raw_data_values.eoprot_tag_mc_joint_status_addinfo_multienc.data;
             dataLen = size(rawArray, 3);
+            disp(dataLen)
             rawData = zeros(encodersNum, dataLen);
 
             for i = 1:nJoints

@@ -3,7 +3,6 @@ classdef AksimEncoder < Encoder
     
     properties (Access = public)
         Diagnostic
-        JointNumber
     end %end of properties
 
     methods
@@ -12,21 +11,6 @@ classdef AksimEncoder < Encoder
             obj@Encoder();
             obj.Diagnostic = struct();
         end 
-
-        function set.JointNumber(obj, joint_number)
-            % Specify the order of the encoders
-            obj.JointNumber = joint_number;
-        end
-
-        function joint_number = get.JointNumber(obj)
-            % Retrieves the encoder resolution.
-            if isempty(obj.JointNumber)
-                disp('--------------------------------------------------------------------')
-                error('Encoder: Aksim. Unspecified Joint Number. Please assign one.');
-            else
-                joint_number = obj.JointNumber;
-            end
-        end
         
         function computeDiagnosticError(obj, experiment)
             % Extracts diagnostic information from the experiment and classifies errors.
@@ -44,7 +28,7 @@ classdef AksimEncoder < Encoder
 
             % Iterate over diagnostic samples
             for d = 1:numberOfSamples
-                errorCode = bitand(rawDiagnosticData(obj.JointNumber, d), double(0xFFFF));
+                errorCode = bitand(rawDiagnosticData(1, d), double(0xFFFF));
 
                 switch errorCode
                     case 0x01 % CRC Error
