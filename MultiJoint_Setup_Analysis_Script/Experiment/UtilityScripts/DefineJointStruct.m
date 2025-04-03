@@ -8,14 +8,11 @@ function joints = DefineJointStruct(experiment_data)
 end
 %% Get joints data
 function accelerations = GetJointAccelerations(experiment_data)
-    % This function retrieves the joints acceleration data.    
-        accelerations= squeeze(experiment_data.joints_state.accelerations.data);
+        accelerations= squeeze(experiment_data.joints_state.accelerations.data)';
 end
 function velocities = GetJointVelocities(experiment_data)
-    % This function retrieves the joints velocity data. 
-        velocities = squeeze(experiment_data.joints_state.velocities.data);
+        velocities = squeeze(experiment_data.joints_state.velocities.data)';
 end
 function positions = GetJointPositions(experiment_data)
-    % This function retrieves the joints position data. 
-        positions = squeeze(experiment_data.joints_state.positions.data);
+        positions = squeeze(experiment_data.joints_state.positions.data)';
 end
