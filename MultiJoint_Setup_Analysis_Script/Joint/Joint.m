@@ -14,11 +14,11 @@ classdef Joint < handle
         function obj = Joint(exp)
             % Joint constructor extracts joint data from an Experiment instance.            
             obj.DescriptionList = exp.GetDescriptionList();
-            obj.Accelerations = obj.GetJointAccelerations(exp.Data);
-            obj.Velocities = obj.GetJointVelocities(exp.Data);
-            obj.Positions = obj.GetJointPositions(exp.Data);
-            if isfield(exp.Data, 'reduction_ratios')
-                obj.ReductionRatios = exp.Data.reduction_ratios;
+            obj.Accelerations = obj.GetJointAccelerations(exp.Data__);
+            obj.Velocities = obj.GetJointVelocities(exp.Data__);
+            obj.Positions = obj.GetJointPositions(exp.Data__);
+            if isfield(exp.Data__, 'reduction_ratios')
+                obj.ReductionRatios = exp.Data__.reduction_ratios;
             else
                 obj.ReductionRatios = ones(1, numel(obj.DescriptionList));
             end
