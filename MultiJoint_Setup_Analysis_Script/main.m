@@ -109,6 +109,7 @@ plot(timestamps, motor_pos_joint_space);
 plot(timestamps, raw_pos_askim2_joint_space_unwrapped);
 plot(timestamps, raw_pos_amo_joint_space_unwrapped);
 hold off
+title("Positions transformed and scaled to the joint space")
 legend('joint pos', 'motor pos joint space', 'aksim2 pos joint space', 'amo pos joint space');
 
 
