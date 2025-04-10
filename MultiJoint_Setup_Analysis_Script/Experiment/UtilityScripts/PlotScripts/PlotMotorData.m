@@ -26,7 +26,7 @@ function PlotMotorData(ts, motorObj)
 
     % Tile Acceleration
     nexttile
-    plot(ts, motorObj.Currents);
+    plot(ts, motorObj.Temperatures);
     title('Motor Temperatures');
     xlabel('timestamps [s]');
     ylabel('Degree Celsius [C]');

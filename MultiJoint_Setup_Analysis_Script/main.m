@@ -162,5 +162,6 @@ hold on
 plot(timestamps, amo_joint_pos_difference);
 hold off
 title("Raw position to estimated joint position differences");
+legend("aksim2 to joint difference", "amo to joint difference")
 index4figures = index4figures+1;
 
