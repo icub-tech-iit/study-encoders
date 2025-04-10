@@ -9,7 +9,7 @@ classdef Motor < handle
         Positions
         Currents
         PWM
-        %Temperatures
+        Temperatures
     end
     
     methods
@@ -22,7 +22,7 @@ classdef Motor < handle
             obj.Positions = obj.GetMotorPositions(exp.Data__);
             obj.Currents = obj.GetMotorCurrents(exp.Data__);
             obj.PWM = obj.GetMotorPWM(exp.Data__);
-            %obj.Temperatures = obj.GetMotorTemperatures(exp.Data__);
+            obj.Temperatures = obj.GetMotorTemperatures(exp.Data__);
         end
 
         function acc = GetMotorAccelerations(~, data)
