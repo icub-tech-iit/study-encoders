@@ -8,6 +8,7 @@ classdef AksimEncoder < Encoder
         crc__
         c2l__
         invalid_data__
+        filtered_data__
     end %end of properties
 
     methods
@@ -22,6 +23,9 @@ classdef AksimEncoder < Encoder
 
             % Retrieve diagnostic data
             [obj.rawDiagnosticData, numberOfSamples] = experiment.GetDiagnosticData();
+            
+            % Retrieve Aksim raw position
+            rawPosData = experiment.GetRawData();
 
             % Initialize struct to count errors
             counts = struct( ...
@@ -31,10 +35,14 @@ classdef AksimEncoder < Encoder
                 'invalid_data', 0 ...
             );
 
+            % datum for keeping last good sample when detecting errors
+            last_good_sample = 0;
+
             % Iterate over diagnostic samples
             obj.crc__ = zeros(1, numberOfSamples);
             obj.c2l__ = zeros(1, numberOfSamples);
             obj.invalid_data__ = zeros(1, numberOfSamples);
+            obj.filtered_data__ = zeros(1, numberOfSamples);
 
             for d = 1:numberOfSamples
                 errorCode = bitand(obj.rawDiagnosticData(1, d), double(0xFFFF));
@@ -66,6 +74,15 @@ classdef AksimEncoder < Encoder
                     case 0x07 % CRC + C2L + Invalid Data
                         counts.crc = counts.crc + 1;
                         obj.crc__(d) = 1;
+                end
+                if((errorCode ~=0) && (d > 1))
+                    if(last_good_sample == 0)
+                        last_good_sample = rawPosData(1, d - 1);
+                    end
+                    obj.filtered_data__(1, d) = last_good_sample;
+                else
+                    obj.filtered_data__(1, d) = rawPosData(1, d);
+                    last_good_sample = 0;
                 end
             end
 
