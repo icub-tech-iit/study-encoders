@@ -9,6 +9,7 @@ classdef Motor < handle
         Positions
         Currents
         PWM
+        Temperatures
     end
     
     methods
@@ -16,13 +17,14 @@ classdef Motor < handle
             % Motor Constructor extracts motor data from an Experiment instance.
             
             obj.DescriptionList = exp.GetDescriptionList();
-            obj.Accelerations = obj.GetMotorAccelerations(exp.Data);
-            obj.Velocities = obj.GetMotorVelocities(exp.Data);
-            obj.Positions = obj.GetMotorPositions(exp.Data);
-            obj.Currents = obj.GetMotorCurrents(exp.Data);
-            obj.PWM = obj.GetMotorPWM(exp.Data);
+            obj.Accelerations = obj.GetMotorAccelerations(exp.Data__);
+            obj.Velocities = obj.GetMotorVelocities(exp.Data__);
+            obj.Positions = obj.GetMotorPositions(exp.Data__);
+            obj.Currents = obj.GetMotorCurrents(exp.Data__);
+            obj.PWM = obj.GetMotorPWM(exp.Data__);
+            obj.Temperatures = obj.GetMotorTemperatures(exp.Data__);
         end
-        
+
         function acc = GetMotorAccelerations(~, data)
             acc = squeeze(data.motors_state.accelerations.data)';
         end
@@ -41,6 +43,10 @@ classdef Motor < handle
         
         function pwmVal = GetMotorPWM(~, data)
             pwmVal = squeeze(data.motors_state.PWM.data)';
+        end
+
+        function temps = GetMotorTemperatures(~, data)
+            temps = squeeze(data.motors_state.temperatures.data)';
         end
     end
 end
