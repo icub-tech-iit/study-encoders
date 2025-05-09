@@ -12,7 +12,7 @@ function PlotMotorData(ts, motorObj)
 
     % Tile PWM
     nexttile
-    plot(ts, motorObj.PWM);
+    plot(ts, motorObj.PWMPercent);
     title('Motor PWMs');
     xlabel('timestamps [s]');
     ylabel('pwms [%]');

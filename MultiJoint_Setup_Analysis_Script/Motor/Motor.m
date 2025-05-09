@@ -9,6 +9,7 @@ classdef Motor < handle
         Positions
         Currents
         PWM
+        PWMPercent
         Temperatures
     end
     
@@ -21,7 +22,7 @@ classdef Motor < handle
             obj.Velocities = obj.GetMotorVelocities(exp.Data__);
             obj.Positions = obj.GetMotorPositions(exp.Data__);
             obj.Currents = obj.GetMotorCurrents(exp.Data__);
-            obj.PWM = obj.GetMotorPWM(exp.Data__);
+            [obj.PWM, obj.PWMPercent] = obj.GetMotorPWM(exp.Data__);
             obj.Temperatures = obj.GetMotorTemperatures(exp.Data__);
         end
 
@@ -41,8 +42,10 @@ classdef Motor < handle
             curr = squeeze(data.motors_state.currents.data)';
         end
         
-        function pwmVal = GetMotorPWM(~, data)
+        function [pwmVal, pwmPerc] = GetMotorPWM(~, data)
+            max_pwm = 32000;
             pwmVal = squeeze(data.motors_state.PWM.data)';
+            pwmPerc = pwmVal*100/max_pwm;
         end
 
         function temps = GetMotorTemperatures(~, data)
