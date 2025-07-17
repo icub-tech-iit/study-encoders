@@ -69,9 +69,12 @@ classdef AksimEncoder < Encoder
                 end
             end
 
-            obj.crc__(obj.crc__ == 0) = nan;
-            obj.c2l__(obj.c2l__ == 0) = nan;
-            obj.invalid_data__(obj.invalid_data__ == 0) = nan;
+            % obj.crc__(obj.crc__ == 0) = nan;
+            % obj.c2l__(obj.c2l__ == 0) = nan;
+            % obj.invalid_data__(obj.invalid_data__ == 0) = nan;
+            obj.crc__(obj.crc__ == 0) = -1;
+            obj.c2l__(obj.c2l__ == 0) = -1;
+            obj.invalid_data__(obj.invalid_data__ == 0) = -1;
 
             % Compute percentages
             obj.Diagnostic.counts.crc = counts.crc;
@@ -125,11 +128,10 @@ classdef AksimEncoder < Encoder
             hold off
             title('Encoder raw data (Joint position)');
             subtitle(['Joint position, (joint speed: ', 'number', ' $[\frac{deg}{sec}$])'], 'Interpreter', 'latex');
-            axis([-inf, inf, -2^15, 2.01^19]);
+            axis([-inf, inf, 0, 2.01^19]);
             xlabel('Time (seconds)');
             lgd = legend('Joint position', 'CRC error', 'C2L error', 'Invalid Data error');
             lgd.FontSize = 5; lgd.Location = 'north'; lgd.Orientation = 'horizontal';
-            set(gca,'color', [0.9 0.9 0.9]);
 
         end
 
