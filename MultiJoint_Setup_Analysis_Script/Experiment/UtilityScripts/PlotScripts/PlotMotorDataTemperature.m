@@ -1,7 +1,7 @@
-function PlotMotorData(ts, motorObj)
+function PlotMotorDataTemperature(ts, motorObj)
 %PLOTJOINTDATA Summary of this function goes here
 %   Detailed explanation goes here
-    tiledlayout(2, 2);
+    tiledlayout(2,2);
 
     % Tile Position
     nexttile
@@ -23,5 +23,13 @@ function PlotMotorData(ts, motorObj)
     title('Motor Currents');
     xlabel('timestamps [s]');
     ylabel('Ampere [A]');
+
+    % Tile Acceleration
+    nexttile
+    plot(ts, motorObj.Temperatures);
+    title('Motor Temperatures');
+    xlabel('timestamps [s]');
+    ylabel('Degree Celsius [C]');
+
 end
 

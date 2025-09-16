@@ -11,6 +11,7 @@ classdef Motor < handle
         PWM
         PWMPercent
         Temperatures
+        max_pwm = 32000;
     end
     
     methods
@@ -42,14 +43,18 @@ classdef Motor < handle
             curr = squeeze(data.motors_state.currents.data)';
         end
         
-        function [pwmVal, pwmPerc] = GetMotorPWM(~, data)
-            max_pwm = 32000;
+        function [pwmVal, pwmPerc] = GetMotorPWM(obj, data)
+            % max_pwm = 32000;
             pwmVal = squeeze(data.motors_state.PWM.data)';
-            pwmPerc = pwmVal*100/max_pwm;
+            pwmPerc = pwmVal*100/obj.max_pwm;
         end
 
         function temps = GetMotorTemperatures(~, data)
-            temps = squeeze(data.motors_state.temperatures.data)';
+            if ~isfield(data.motors_state, 'temperatures')
+                temps = NaN; % Assign NaN if temperatures field is not present
+            else
+                temps = squeeze(data.motors_state.temperatures.data)';
+            end
         end
     end
 end
