@@ -61,7 +61,7 @@ classdef AksimEncoder < Encoder
                         obj.crc__(d) = 1;
 
                     case 0x06 % C2L + Invalid Data
-                        counts.c2l_invalid_data = counts.c2l_invalid_data + 1;
+                        counts.invalid_data = counts.invalid_data + 1;
 
                     case 0x07 % CRC + C2L + Invalid Data
                         counts.crc = counts.crc + 1;

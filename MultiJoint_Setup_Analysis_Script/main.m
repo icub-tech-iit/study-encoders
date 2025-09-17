@@ -1,16 +1,7 @@
 %% Workspace Cleanup
 close all; clear; clc;
-%% % ------------------- Use notes --------------------- %%%
-% Please do not modify these folders since the resources are located here.
-% If you move these scripts you have to relocate them in order to let the script work. 
-addpath('Encoders');
-addpath('Encoders/Aksim');
-addpath('Encoders/Amo');
-addpath('Joint');
-addpath('Motor');
-addpath('Experiment');
-addpath(genpath('Experiment/UtilityScripts'));
-addpath('Data');
+%% % ------------------- Locate resources --------------------- %%%
+addpath(genpath('.'))
 % ----- End of locate resources ----- %
 %% Load data:
 index4figures = 1;
