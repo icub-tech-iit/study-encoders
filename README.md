@@ -50,5 +50,5 @@ git clone https://github.com/icub-tech-iit/encoders-study.git --single-branch --
 
 Be careful that some branches (e.g., `master`, `mech`...) are handled via [Git LFS](https://help.github.com/en/articles/installing-git-large-file-storage).
 
-🚧 **This section is currently under construction.**
+3. [Compile the single application in the `code` branch](https://github.com/icub-tech-iit/study-encoders/blob/code/README.md)
 
