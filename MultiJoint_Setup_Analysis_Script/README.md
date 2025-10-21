@@ -1,3 +1,5 @@
+# MultiJoint_Setup_Analysis_Script
+
 This MATLAB application is a suite of scripts and classes designed to load, analyze, and visualize data from robotic joint experiments. It provides tools to process and inspect data from motors, joints, and specific encoder types (Aksim and AMO), focusing on performance analysis, diagnostic error checking, and data correlation.
 
 The `main.m` script provides a comprehensive example of how to use these tools to load a `.mat` experiment file and conduct various analyses, such as:
