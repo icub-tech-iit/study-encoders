@@ -1,0 +1,3 @@
+../Core/Src/AEAT9922.c:25:19:AEAT9922_Read_SPI4A	40	static
+../Core/Src/AEAT9922.c:60:19:AEAT9922_Write_SPI4A	32	static
+../Core/Src/AEAT9922.c:104:19:AEAT9922_ReadPosition_SPI4A	64	static
