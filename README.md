@@ -45,7 +45,7 @@ The goal of this repository is to provide a structured workspace for:
 
 2.  How to clone specific branches locally
 ```console
-git clone https://github.com/icub-tech-iit/encoders-study.git --single-branch --branch <branch-name>
+git clone https://github.com/icub-tech-iit/study-encoders.git --single-branch --branch <branch-name>
 ```
 
 Be careful that some branches (e.g., `master`, `mech`...) are handled via [Git LFS](https://help.github.com/en/articles/installing-git-large-file-storage).
