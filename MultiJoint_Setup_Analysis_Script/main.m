@@ -8,7 +8,11 @@ index4figures = 1;
 
 my_experiment_A = Experiment(); % Experiment 1
 
-my_experiment_A.LoadData('Data/torso_pitch_mj1_amo_aksim_continuous_torque_no_load_1744971861.978592.mat'); % Load the data
+
+[experimentName, experimentPath] = uigetfile({'*.mat','Data Files (*.mat)'}, ...
+                                                  'Select the real data to run the test.');
+
+my_experiment_A.LoadData(experimentName); % Load the data
 
 my_experiment_A.StartTime; % If not specified, StartTime = 0
 my_experiment_A.EndTime; % If not specified, EndTime = end of the experiment
