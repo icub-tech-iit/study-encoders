@@ -30,40 +30,38 @@ int main(void)
 	MX_LPUART1_UART_Init();
 	MX_SPI2_Init();
 
-	uint8_t unlock_register_val;
-	uint8_t protocol_register_val;
-
-	uint8_t register7_val;
-	uint8_t register8_val;
-
-	uint8_t status_register_val;
-
 	char buf[200];
 
 	AEAT9922_Reading_t reading_data;
-	/* 3. Declare variables for the main loop */
+
 	HAL_UART_Transmit(&hlpuart1, (uint8_t*)("AEAT-9922\r\n"), 12, HAL_MAX_DELAY);
 
-	#ifdef config
+#ifdef config
 
-		AEAT9922_Write_SPI4A(0x10, UNLOCK); // Unlocks shadow registers.
-		HAL_Delay(10);
+	AEAT9922_Write_SPI4A(0x10, UNLOCK); // Unlocks shadow registers.
+	HAL_Delay(1);
 
-		AEAT9922_Write_SPI4A(0x07, 0xC0);
-		HAL_Delay(10);
+	AEAT9922_Write_SPI4A(0x0B, 0x20); //Sets SPI-4(B) (actually this is the only register I cannot write on!!!)
+	HAL_Delay(1);
 
-		AEAT9922_Write_SPI4A(0x0B, 0x20);
-		HAL_Delay(10);
+	AEAT9922_Write_SPI4A(0x11, PROGRAM); // Ends the config. phase.
+	HAL_Delay(45);
 
-		AEAT9922_Write_SPI4A(0x08, 0x80);
-		HAL_Delay(10);
+	HAL_UART_Transmit(&hlpuart1, (uint8_t*)("Restart the board\r\n"), 25, HAL_MAX_DELAY);
 
-		AEAT9922_Write_SPI4A(0x11, PROGRAM);
-		HAL_Delay(45);
-
-	#endif
+#endif
 
 #ifdef regs
+
+		// checks for some useful register values
+
+		uint8_t unlock_register_val;
+		uint8_t protocol_register_val;
+
+		uint8_t register7_val;
+		uint8_t register8_val;
+
+		uint8_t status_register_val;
 
 		AEAT9922_Read_SPI4A(0x10, &unlock_register_val);
 
@@ -92,12 +90,10 @@ int main(void)
 #endif
 
 	#ifdef pos
-	/* 4. Enter the main application loop */
+
 		while (1)
 		{
-			AEAT9922_ReadPosition_SPI4A(&reading_data);
-
-			// Combine all parts into the final output string.
+			AEAT9922_ReadPosition_SPI4A(&reading_data); // See AEAT9922.c
 			sprintf(buf, "Pos: %6lu | Angle: %7.2f° | Parity: %s |\r\n",
 					(unsigned long)reading_data.position,
 					reading_data.angle_degrees,
@@ -105,33 +101,13 @@ int main(void)
 
 			HAL_UART_Transmit(&hlpuart1, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
 
-			HAL_Delay(500); // Loop delay for readability.
+			HAL_Delay(250); // Loop delay for readability.
 		}
 
 	#endif
 
-	#ifdef sr
-
-			while (1)
-			{
-
-				volatile HAL_StatusTypeDef status = AEAT9922_Read_SPI4A(STATUS, &status_register_val);
-
-				if (status != HAL_OK)
-				{
-			        sprintf(buf, "Failed to read from Reg 0x%02X. Status: %d\r\n", STATUS, status);
-			        return 1;
-			    }
-
-				sprintf(buf, "Read from Reg 0x%02X: Value = 0x%02X\r\n", STATUS, status_register_val);
-				HAL_UART_Transmit(&hlpuart1, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-				HAL_Delay(500); // Loop delay for readability.
-			}
-	#endif
 }
 
-/* System configuration functions (same as in main.c) */
 void SystemClock_Config(void)
 {
 	RCC_OscInitTypeDef RCC_OscInitStruct = {0};
