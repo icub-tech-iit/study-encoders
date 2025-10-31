@@ -15,7 +15,7 @@ static void MX_GPIO_Init(void);
 static void MX_LPUART1_UART_Init(void);
 static void MX_SPI2_Init(void);
 
-#define pos
+#define config
 
 /**
  * @brief  The application entry point.
@@ -106,6 +106,42 @@ int main(void)
 
 	#endif
 
+#ifdef pos_diagnostic
+
+		uint8_t status_reg;
+		char status_msg[150];
+
+	while (1)
+	{
+		AEAT9922_ReadPosition_SPI4A(&reading_data); // See AEAT9922.c
+		sprintf(buf, "Pos: %6lu | Angle: %7.2f° | Parity: %s | \r\n",
+				(unsigned long)reading_data.position,
+				reading_data.angle_degrees,
+				reading_data.crc_ok ? "OK" : "FAIL");
+		HAL_UART_Transmit(&hlpuart1, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+		HAL_Delay(250);
+
+		AEAT9922_Read_SPI4A(0x00, &status_reg);
+
+	    if (AEAT9922_Read_SPI4A(STATUS, &status_reg) != HAL_OK) {
+	        sprintf(status_msg, "Failed to read status register\r\n");
+	        HAL_UART_Transmit(&hlpuart1, (uint8_t*)status_msg, strlen(status_msg), HAL_MAX_DELAY);
+	        return HAL_ERROR;
+	    }
+
+	    sprintf(status_msg, "Status: | RDY=%d | MHI=%d | MLO=%d | EEPROM_Err=%d | \r\n",
+	            (status_reg & FLAG_RDY) ? 1 : 0,
+				(status_reg & FLAG_MHI) ? 1 : 0,
+				(status_reg & FLAG_MLO) ? 1 : 0,
+			    (status_reg & FLAG_MEM_Err) ? 1 : 0);
+
+		HAL_UART_Transmit(&hlpuart1, (uint8_t*)status_msg, strlen(status_msg), HAL_MAX_DELAY);
+
+		HAL_Delay(250); // Loop delay for readability.
+	}
+
+#endif
 }
 
 void SystemClock_Config(void)
