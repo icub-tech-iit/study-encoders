@@ -6,8 +6,8 @@
 
 /* Private defines */
 #define ENCODER_RESOLUTION_BITS 18
-#define ENCODER_MAX_COUNTS      (1UL << ENCODER_RESOLUTION_BITS)  // 2^18
-#define DEGREES_PER_COUNT       (360.0f / ENCODER_MAX_COUNTS)
+#define ENCODER_MAX_COUNTS      (1UL << ENCODER_RESOLUTION_BITS) - 1  // 2^18
+#define DEGREES_PER_COUNT       360.0f / 262143.0f;//(360.0f / ENCODER_MAX_COUNTS)
 
 /* External SPI handles */
 extern SPI_HandleTypeDef hspi2;
@@ -44,12 +44,6 @@ HAL_StatusTypeDef AEAT9922_Read_SPI4A(uint8_t reg_addr, uint8_t *read_data) {
     if (status != HAL_OK) {
         return status;
     }
-
-    // A brief delay between transactions is required to meet tCSn (min 350ns).
-    // The overhead of the GPIO toggles and the next lines of code
-    // is almost certainly longer than 350ns, so an explicit delay is not needed.
-
-    HAL_Delay(1);
 
     uint16_t dummy_command = (1 << 14) | 0x00; // RW=1, Addr=0x00
     uint8_t dummy_parity = calculate_even_parity(dummy_command);
@@ -137,9 +131,6 @@ HAL_StatusTypeDef AEAT9922_ReadPosition_SPI4A(AEAT9922_Reading_t *reading) {
     HAL_GPIO_WritePin(ENCODER_NSS_PORT, ENCODER_NSS_PIN, GPIO_PIN_SET);
 
     if (status != HAL_OK) { return status; }
-
-    // Brief delay to meet tCSn (min 350ns). A 1ms delay is three times more.
-    HAL_Delay(1);
 
     // --- Transaction 2: Send Dummy Command, Receive Position Data ---
     // We send 3 dummy bytes (or the command again) to clock out the 20-bit response.
